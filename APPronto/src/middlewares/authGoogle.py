@@ -20,8 +20,10 @@ oauth.register(
     client_secret=os.getenv("CLIENT_SECRET"),
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid email profile'}
+    
 )
-
+print(">>> CLIENT_ID LIDO:", os.getenv("CLIENT_ID"))
+print(">>> CLIENT_SECRET LIDO:", os.getenv("CLIENT_SECRET"))
 @router.get("/login/google")
 async def login_google(request: Request):
     redirect_uri = request.url_for('auth_google')
