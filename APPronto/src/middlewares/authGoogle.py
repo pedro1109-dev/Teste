@@ -26,7 +26,7 @@ print(">>> CLIENT_ID LIDO:", os.getenv("CLIENT_ID"))
 print(">>> CLIENT_SECRET LIDO:", os.getenv("CLIENT_SECRET"))
 @router.get("/login/google")
 async def login_google(request: Request):
-    redirect_uri = request.url_for('auth_google')
+    redirect_uri = "https://teste-ptn4.onrender.com/auth/google"  # URL fixa
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @router.get("/auth/google")

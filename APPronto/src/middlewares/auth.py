@@ -16,7 +16,8 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=secret_key,
     https_only=True,  # adicione isso
-    same_site="lax"   # e isso
+    same_site="lax",
+    max_age=3600   # e isso
 )
 
 # Adiciona middleware CORS para permitir requisições de qualquer origem
