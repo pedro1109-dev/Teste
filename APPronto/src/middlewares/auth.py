@@ -14,7 +14,9 @@ secret_key = os.getenv("SECRET_KEY")  # Chave secreta para sessões
 # Adiciona middleware de sessão
 app.add_middleware(
     SessionMiddleware,
-    secret_key=secret_key
+    secret_key=secret_key,
+    https_only=True,  # adicione isso
+    same_site="lax"   # e isso
 )
 
 # Adiciona middleware CORS para permitir requisições de qualquer origem
