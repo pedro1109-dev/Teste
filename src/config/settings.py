@@ -37,8 +37,7 @@ SessionLocal = sessionmaker(
 
 # ── Google Vision ──────────────────────────────────────────
 GOOGLE_CREDENTIALS_PATH = os.getenv(
-    "GOOGLE_CREDENTIALS_PATH",
-    "credentials/google_vision.json",
+    "GOOGLE_CREDENTIALS_PATH"
 )
 
 # ── Google Gemini (gratuito) ───────────────────────────────

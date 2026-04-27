@@ -9,9 +9,9 @@ import os
 from google.cloud import vision
 from src.repositories.extract import extrair_todos_campos  # Função de extração
 from src.services.ia_analyzer import analisar_fatura_com_gemini, fundir_resultados  # Análise IA
-from src.config.settings import GOOGLE_CREDENTIALS_PATH, GEMINI_API_KEY
+from src.config.settings import GEMINI_API_KEY
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_CREDENTIALS_PATH  # Configura credenciais Google
+  # Configura credenciais Google
 
 def extrair_com_posicao(caminho_imagem: str) -> list[dict]:
     # Extrai palavras com posições (x, y) da imagem
