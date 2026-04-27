@@ -5,6 +5,9 @@ from src.config.settings import get_db
 from src.models.usuarioModel import Usuario
 from fastapi import Depends
 import os
+if os.path.exists(".env"):
+    from dotenv import load_dotenv
+    load_dotenv()
 
 router = APIRouter(tags=["Continuar com Google"])
 
