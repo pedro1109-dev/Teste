@@ -111,6 +111,7 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
             resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
             resp.raise_for_status()
             data = resp.json()
+            print("RESPOSTA COMPLETA GEMINI:", data)
 
         raw_text = (
             data.get("candidates", [{}])[0]
@@ -119,7 +120,7 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
             .get("text", "")
             .strip()
         )
-
+        print("RAW TEXT:", raw_text)
         if not raw_text:
             return {"erro_ia": "Gemini retornou resposta vazia"}
         resultado = extrair_json_seguro(raw_text)
