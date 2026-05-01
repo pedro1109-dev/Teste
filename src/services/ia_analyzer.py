@@ -126,6 +126,7 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
 
         # Se deu certo, retorna direto
         if "erro_ia" not in resultado:
+            print("RESPOSTA BRUTA GEMINI:\n", raw_text)
             return resultado
 
         # Se deu erro, retorna com mais contexto
