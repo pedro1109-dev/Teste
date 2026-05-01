@@ -27,8 +27,8 @@ import json
 import re
 import httpx
 
-GEMINI_MODEL = "gemini-1.5-flash"
 
+GEMINI_MODEL = "gemini-1.5-flash-latest"
 
 GEMINI_API_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -111,12 +111,9 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 429:
             return {"erro_ia": "Limite gratuito Gemini atingido — aguarde 1 minuto e tente novamente."}
-        return {
-            "erro_ia": "Erro na Gemini API",
-            "status": e.response.status_code,
-            "detalhe": e.response.text
-            }
-
+        return {"erro_ia": f"HTTP {e.response.status_code}: {e.response.text[:300]}"}
+    except Exception as e:
+        return {"erro_ia": str(e)}
 
 
 def fundir_resultados(extraido_ocr: dict, extraido_ia: dict) -> dict:
