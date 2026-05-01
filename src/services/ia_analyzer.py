@@ -26,6 +26,23 @@ COMO OBTER A CHAVE GRATUITA:
 import json
 import re
 import httpx
+import json
+import re
+
+def extrair_json_seguro(texto: str):
+    try:
+        # remove blocos ```json ```
+        texto = re.sub(r"```json|```", "", texto).strip()
+
+        # tenta encontrar JSON dentro do texto
+        match = re.search(r"\{.*\}", texto, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+
+        return {"erro_ia": "Nenhum JSON encontrado", "raw": texto}
+
+    except Exception as e:
+        return {"erro_ia": f"Falha ao parsear JSON: {str(e)}", "raw": texto}
 
 GEMINI_MODEL = "gemini-2.5-flash"
 
@@ -55,7 +72,10 @@ _PROMPT = """Analise este texto de fatura brasileira e extraia os campos:
 Texto da fatura:
 {texto}
 
-Retorne somente o JSON."""
+Retorne APENAS um JSON válido.
+NÃO use markdown.
+NÃO use ```json```.
+NÃO escreva texto fora do JSON."""
 
 
 async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
@@ -102,12 +122,18 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
 
         if not raw_text:
             return {"erro_ia": "Gemini retornou resposta vazia"}
+        resultado = extrair_json_seguro(raw_text)
 
-        raw_text = re.sub(r"```json|```", "", raw_text).strip()
-        return json.loads(raw_text)
+        # Se deu certo, retorna direto
+        if "erro_ia" not in resultado:
+            return resultado
 
-    except json.JSONDecodeError:
-        return {"erro_ia": "Resposta da IA não é JSON válido", "raw": raw_text}
+        # Se deu erro, retorna com mais contexto
+        return {
+            "erro_ia": "Falha ao interpretar resposta da IA",
+            "raw": raw_text
+        }
+    
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 429:
             return {"erro_ia": "Limite gratuito Gemini atingido — aguarde 1 minuto e tente novamente."}
@@ -154,5 +180,6 @@ def fundir_resultados(extraido_ocr: dict, extraido_ia: dict) -> dict:
 
     # Campos exclusivos da IA
     resultado["concessionaria"] = extraido_ia.get("concessionaria")
+    
 
     return resultado
