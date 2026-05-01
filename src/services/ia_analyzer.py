@@ -27,7 +27,7 @@ import json
 import re
 import httpx
 
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 
 GEMINI_API_URL = (
@@ -75,7 +75,7 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
         "contents": [
             {
                 "role": "user",
-                "parts": [{"text": _PROMPT.format(texto=texto_bruto[:6000])}],
+                "parts": [{"text": _PROMPT.format(texto=texto_bruto[:3000])}],
             }
         ],
         "generationConfig": {
