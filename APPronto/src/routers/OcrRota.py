@@ -98,7 +98,7 @@ async def upload_fatura(
             unidade                 = dados.get("unidade"),
             mes_referencia          = dados.get("mes_referencia"),
             tipo_fatura             = dados.get("tipo_fatura"),
-            concessionaria          = dados.get("concessionaria"),
+            concessionaria = dados.get("concessionaria") or "Desconhecida",
             nivel_consumo           = analise.nivel if analise else None,
             estimativa_proximo_mes  = analise.estimativa_proximo_mes if analise else None,
             estimativa_valor_proximo= analise.estimativa_valor_proximo_mes if analise else None,
