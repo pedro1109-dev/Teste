@@ -26,8 +26,6 @@ COMO OBTER A CHAVE GRATUITA:
 import json
 import re
 import httpx
-import json
-import re
 
 def extrair_json_seguro(texto: str):
     try:
@@ -95,12 +93,12 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
         "contents": [
             {
                 "role": "user",
-                "parts": [{"text": _PROMPT.format(texto=texto_bruto[:3000])}],
+                "parts": [{"text": _PROMPT.format(texto=texto_bruto[:1500])}],
             }
         ],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 512,
+            "maxOutputTokens": 1024,
             "responseMimeType": "application/json",
         },
     }
@@ -111,7 +109,10 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
             resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
             resp.raise_for_status()
             data = resp.json()
-            print("RESPOSTA COMPLETA GEMINI:", data)
+
+        print("RESPOSTA COMPLETA GEMINI:", data)
+
+        finish_reason = data.get("candidates", [{}])[0].get("finishReason")
 
         raw_text = (
             data.get("candidates", [{}])[0]
@@ -121,6 +122,11 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
             .strip()
         )
         print("RAW TEXT:", raw_text)
+        if finish_reason == "MAX_TOKENS":
+            return {
+                "erro_ia": "Resposta cortada (MAX_TOKENS)",
+                "raw": raw_text
+                }
         if not raw_text:
             return {"erro_ia": "Gemini retornou resposta vazia"}
         resultado = extrair_json_seguro(raw_text)
