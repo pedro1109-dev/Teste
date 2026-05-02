@@ -9,12 +9,20 @@ from src.models.base import Base
 class Consumo(Base):
     __tablename__ = "consumos"
 
-    id_consumos = Column(Integer, primary_key=True, autoincrement=True)  # ID único do consumo
-    tipo = Column(String, nullable=False)  # Tipo: energia ou água
-    valor = Column(DECIMAL, nullable=False)  # Valor do consumo
-    data = Column(DateTime, server_default=func.now())  # Data automática
-    id_usuario = Column(Integer, ForeignKey("usuarios.id"))  # FK para usuário
+    id_consumos = Column(Integer, primary_key=True, autoincrement=True)
+    id_usuario = Column(Integer, ForeignKey("usuarios.id"))
 
+    tipo = Column(String, nullable=False)
+    valor = Column(DECIMAL, nullable=False)
+
+    consumo = Column(DECIMAL)           # 🔥 NOVO
+    unidade = Column(String)            # 🔥 NOVO
+    mes_referencia = Column(String)     # 🔥 NOVO
+    vencimento = Column(String)         # 🔥 NOVO
+    
     id_meta = Column(Integer, ForeignKey("metas.id_metas"), nullable=True)  # FK opcional para meta
 
-    meta = relationship("Meta", back_populates="consumos")  # Relacionamento com Meta
+    meta = relationship("Meta", back_populates="consumos")
+    data = Column(DateTime, server_default=func.now())
+    origem = Column(String, default="manual")
+

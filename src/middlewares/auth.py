@@ -1,30 +1,16 @@
-# auth.py - Middleware de autenticação e configurações de segurança
-
 from src.main import app
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 import os
 
-# Carrega variáveis do .env (local)
-load_dotenv()
-
-# Pega SECRET_KEY com segurança
-secret_key = os.getenv("SECRET_KEY")
-
-if not secret_key:
-    raise ValueError("SECRET_KEY não definida no ambiente")
-
-# Middleware de sessão
 app.add_middleware(
     SessionMiddleware,
-    secret_key=secret_key,
+    secret_key=os.environ["SECRET_KEY"],
     https_only=True,
     same_site="lax",
     max_age=3600
 )
 
-# Middleware CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,12 +18,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")  # Contexto para hash bcrypt
 
 def hash_password(password: str):
+    # Função para hashear senha
     return pwd_context.hash(password)
 
 def verify_password(password: str, hashed: str):

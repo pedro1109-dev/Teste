@@ -26,7 +26,8 @@ from src.services.analysis import (
     NIVEL_LABELS,
 )  # Funções de análise
 from src.config.settings import get_db
-from src.models.ocrModel import Ocr  # Modelo OCR
+from src.models.ocrModel import Ocr
+from src.models.consumoModel import Consumo  # Modelo OCR
 
 ocr_route = APIRouter(tags=["OCR"])  # Router para OCR
 
@@ -98,7 +99,7 @@ async def upload_fatura(
             unidade                 = dados.get("unidade"),
             mes_referencia          = dados.get("mes_referencia"),
             tipo_fatura             = dados.get("tipo_fatura"),
-            concessionaria          = dados.get("concessionaria"),
+            concessionaria = dados.get("concessionaria") or "Desconhecida",
             nivel_consumo           = analise.nivel if analise else None,
             estimativa_proximo_mes  = analise.estimativa_proximo_mes if analise else None,
             estimativa_valor_proximo= analise.estimativa_valor_proximo_mes if analise else None,
@@ -228,3 +229,48 @@ def get_resumo(id_usuario: int, db: Session = Depends(get_db)):
         }
 
     return resultado
+
+@ocr_route.post("/converter/{id_leitura}")
+def converter_para_consumo(id_leitura: int, db: Session = Depends(get_db)):
+    
+    leitura = db.query(Ocr).filter(Ocr.id_leitura == id_leitura).first()
+
+    if not leitura:
+        raise HTTPException(status_code=404, detail="Leitura não encontrada")
+
+    # validação mínima
+    if not leitura.consumo or not leitura.total:
+        raise HTTPException(status_code=400, detail="Dados incompletos para conversão")
+    
+    existe = db.query(Consumo).filter(
+    Consumo.id_usuario == leitura.id_usuario,
+    Consumo.tipo == leitura.tipo_fatura
+    ).first()
+
+    if existe:
+        raise HTTPException(status_code=400, detail="Consumo já registrado para esse mês")
+
+    novo_consumo = Consumo(
+        id_usuario=leitura.id_usuario,
+        consumo=leitura.consumo,
+        total=leitura.total,
+        unidade=leitura.unidade,
+        tipo_fatura=leitura.tipo_fatura,
+        mes_referencia=leitura.mes_referencia,
+        vencimento=leitura.vencimento,
+        origem="ocr"
+    )
+    
+
+    db.add(novo_consumo)
+    db.commit()
+    db.refresh(novo_consumo)
+
+    return {
+        "mensagem": "Convertido com sucesso",
+        "consumo": {
+            "id": novo_consumo.id_consumo,
+            "consumo": novo_consumo.consumo,
+            "total": novo_consumo.total
+        }
+    }

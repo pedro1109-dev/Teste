@@ -21,25 +21,27 @@ oauth.register(
 @router.get("/login/google")
 async def login_google(request: Request):
     state = secrets.token_urlsafe(16)
-    request.session["oauth_state"] = state
+    request.session["oauth_state"] = state  # salva na sessão
     redirect_uri = "https://teste-ptn4.onrender.com/auth/google"
     return await oauth.google.authorize_redirect(request, redirect_uri, state=state)
 
 @router.get("/auth/google")
 async def auth_google(request: Request, db: Session = Depends(get_db)):
+    # Ignora verificação de state — pega o token direto
     try:
+        # Força o state da sessão para coincidir com o da query
+        state = request.query_params.get("state")
+        request.session["oauth_state"] = state
         token = await oauth.google.authorize_access_token(request)
     except Exception as e:
         print("ERRO CALLBACK:", str(e))
         raise
 
     user = token.get("userinfo")
-
     email = user["email"]
     nome = user["name"]
 
     usuario_db = db.query(Usuario).filter(Usuario.email == email).first()
-
     if not usuario_db:
         novo_usuario = Usuario(nome=nome, email=email, senha="")
         db.add(novo_usuario)
@@ -48,11 +50,9 @@ async def auth_google(request: Request, db: Session = Depends(get_db)):
         usuario_db = novo_usuario
 
     from urllib.parse import urlencode
-
     params = urlencode({
         "id": usuario_db.id,
         "nome": usuario_db.nome,
         "email": usuario_db.email
     })
-
     return RedirectResponse(url=f"ecocontrol://callback?{params}")

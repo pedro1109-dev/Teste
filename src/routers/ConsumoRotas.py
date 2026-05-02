@@ -11,12 +11,16 @@ from fastapi import Depends, HTTPException, APIRouter
 
 consumo_router = APIRouter(tags=["Consumo"])  # Router para rotas de consumo
 
+
+    
+
 @consumo_router.post("/consumo")
 def registro_consumo(consumo: ConsumoCreate, db :Session = Depends(get_db)):
     # Rota para registrar um novo consumo
     novo_consumo = Consumo(
-        tipo = consumo.tipo,
+        tipo = consumo.tipo or "desconhecido",
         valor = consumo.valor,
+        unidade = consumo.unidade,
         data = datetime.now(),  # Define a data atual
         id_usuario = consumo.id_usuario,
         id_meta = consumo.id_meta if consumo.id_meta not in (0, None) else None  # Trata meta opcional
