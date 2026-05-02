@@ -67,13 +67,21 @@ async def extrair_total_avancado(words: list[dict]) -> dict:
     # Etapa 2: Gemini como fallback semântico
     texto_bruto = dados_ocr.get("texto_bruto", "")
     dados_ia = {}
+    ia_status = "nao_utilizada"
     aviso_ia = None
 
     if GEMINI_API_KEY and texto_bruto:
         dados_ia = await analisar_fatura_com_gemini(texto_bruto, GEMINI_API_KEY)
 
-    if dados_ia and "erro_ia" in dados_ia:
-        aviso_ia = dados_ia["erro_ia"]
+        if dados_ia:
+                if "erro_ia" in dados_ia:
+                    ia_status = "erro"
+                    aviso_ia = dados_ia["erro_ia"]
+                else:
+                    ia_status = "ok"
+        else:
+            ia_status = "erro"
+            aviso_ia = "IA não retornou dados"
 
     # Etapa 3: fusão — OCR tem prioridade, Gemini preenche lacunas
     if dados_ia and "erro_ia" not in dados_ia:
@@ -86,8 +94,12 @@ async def extrair_total_avancado(words: list[dict]) -> dict:
     if tipo_por_unidade != "desconhecido":
         resultado["tipo_fatura"] = tipo_por_unidade
 
+    # Evita erro no banco (NULL)
+    resultado["concessionaria"] = resultado.get("concessionaria") or "Desconhecida"
+
     # Propaga aviso_ia para o resultado final (era perdido antes)
-    if aviso_ia:
-        resultado["aviso_ia"] = aviso_ia
+    resultado["ia_status"] = ia_status
+    resultado["aviso_ia"] = aviso_ia
+    resultado["usou_ia"] = bool(dados_ia)
 
     return resultado

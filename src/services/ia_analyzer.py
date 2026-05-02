@@ -14,12 +14,6 @@ como camada de interpretação semântica:
   2. O Gemini entende o contexto da fatura e devolve JSON estruturado.
   3. O resultado é fundido com o que os extratores regex já encontraram.
      Regex tem prioridade (mais preciso localmente); Gemini preenche lacunas.
-
-COMO OBTER A CHAVE GRATUITA:
-  1. Acesse: https://aistudio.google.com/app/apikey
-  2. Clique em "Create API Key"
-  3. Copie e coloque no .env: GEMINI_API_KEY=sua_chave_aqui
-  Sem cartão de crédito. Sem custo.
 ───────────────────────────────────────────────────────────────────────
 """
 
@@ -27,8 +21,22 @@ import json
 import re
 import httpx
 
+def extrair_json_seguro(texto: str):
+    try:
+        # remove blocos ```json ```
+        texto = re.sub(r"```json|```", "", texto).strip()
 
-GEMINI_MODEL = "gemini-1.5-flash-latest"
+        # tenta encontrar JSON dentro do texto
+        match = re.search(r"\{.*\}", texto, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+
+        return {"erro_ia": "Nenhum JSON encontrado", "raw": texto}
+
+    except Exception as e:
+        return {"erro_ia": f"Falha ao parsear JSON: {str(e)}", "raw": texto}
+
+GEMINI_MODEL = "gemini-2.5-flash"
 
 GEMINI_API_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -55,12 +63,15 @@ _PROMPT = """Analise este texto de fatura brasileira e extraia os campos:
 Texto da fatura:
 {texto}
 
-Retorne somente o JSON."""
+
+NÃO use markdown.
+NÃO use ```json```.
+NÃO escreva texto fora do JSON"""
 
 
 async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
     """
-    Envia o texto OCR ao Gemini 1.5 Flash e retorna os campos como dict.
+    Envia o texto OCR ao Gemini 2.5 Flash e retorna os campos como dict.
     Gratuito até 1.500 req/dia | 15 req/min — sem cartão de crédito.
     """
     if not api_key:
@@ -75,12 +86,12 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
         "contents": [
             {
                 "role": "user",
-                "parts": [{"text": _PROMPT.format(texto=texto_bruto[:6000])}],
+                "parts": [{"text": _PROMPT.format(texto=texto_bruto[:1500])}],
             }
         ],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 512,
+            "maxOutputTokens": 1024,
             "responseMimeType": "application/json",
         },
     }
@@ -91,6 +102,9 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
             resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
             resp.raise_for_status()
             data = resp.json()
+        print("RESPOSTA COMPLETA GEMINI:", data)
+
+        finish_reason = data.get("candidates", [{}])[0].get("finishReason")
 
         raw_text = (
             data.get("candidates", [{}])[0]
@@ -100,11 +114,24 @@ async def analisar_fatura_com_gemini(texto_bruto: str, api_key: str) -> dict:
             .strip()
         )
 
+        if finish_reason == "MAX_TOKENS":
+            return {
+                "erro_ia": "Resposta cortada (MAX_TOKENS)",
+                "raw": raw_text
+                }
+        print("RAW TEXT:", raw_text)
         if not raw_text:
             return {"erro_ia": "Gemini retornou resposta vazia"}
+        resultado = extrair_json_seguro(raw_text)
 
-        raw_text = re.sub(r"```json|```", "", raw_text).strip()
-        return json.loads(raw_text)
+        if "erro_ia" not in resultado:
+            return resultado
+
+        # Se deu erro, retorna com mais contexto
+        return {
+            "erro_ia": "Falha ao interpretar resposta da IA",
+            "raw": raw_text
+        }
 
     except json.JSONDecodeError:
         return {"erro_ia": "Resposta da IA não é JSON válido", "raw": raw_text}
