@@ -253,9 +253,9 @@ def converter_para_consumo(id_leitura: int, db: Session = Depends(get_db)):
     novo_consumo = Consumo(
         id_usuario=leitura.id_usuario,
         consumo=leitura.consumo,
-        total=leitura.total,
+        valor=leitura.total,
         unidade=leitura.unidade,
-        tipo_fatura=leitura.tipo_fatura,
+        tipo=leitura.tipo_fatura,
         mes_referencia=leitura.mes_referencia,
         vencimento=leitura.vencimento,
         origem="ocr"
@@ -269,7 +269,7 @@ def converter_para_consumo(id_leitura: int, db: Session = Depends(get_db)):
     return {
         "mensagem": "Convertido com sucesso",
         "consumo": {
-            "id": novo_consumo.id_consumo,
+            "id": novo_consumo.id_consumos,
             "consumo": novo_consumo.consumo,
             "total": novo_consumo.total
         }
