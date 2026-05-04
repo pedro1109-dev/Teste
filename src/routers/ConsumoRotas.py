@@ -2,7 +2,7 @@
 # Gerencia o registro e controle de consumo de energia/água dos usuários.
 
 from src.main import app  # Importa a app (não usado)
-from src.schemas.consumoSchemas import ConsumoCreate, ConsumoUpdate  # Esquemas para consumo
+from src.schemas.consumoSchemas import ConsumoCreate,  ConsumoUpdate , inferir_tipo  # Esquemas para consumo
 from datetime import datetime
 from src.models.consumoModel import Consumo  # Modelo de consumo
 from src.config.settings import get_db
@@ -18,10 +18,10 @@ consumo_router = APIRouter(tags=["Consumo"])  # Router para rotas de consumo
 def registro_consumo(consumo: ConsumoCreate, db :Session = Depends(get_db)):
     # Rota para registrar um novo consumo
     novo_consumo = Consumo(
-        tipo = consumo.tipo or "desconhecido",
+        tipo = inferir_tipo(consumo.unidade),
         valor = consumo.valor,
         unidade = consumo.unidade,
-        data = datetime.now(),  # Define a data atual
+        data = consumo.data or datetime.now(),  # Define a data atual
         id_usuario = consumo.id_usuario,
         id_meta = consumo.id_meta if consumo.id_meta not in (0, None) else None  # Trata meta opcional
         )

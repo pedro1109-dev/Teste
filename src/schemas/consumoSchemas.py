@@ -4,6 +4,7 @@
 from pydantic import BaseModel, field_validator
 from decimal import Decimal
 from typing import Optional
+from datetime import datetime
 
 class ConsumoCreate(BaseModel):
     valor: Decimal
@@ -13,26 +14,28 @@ class ConsumoCreate(BaseModel):
 
     tipo: Optional[str] = None
 
-    @field_validator("tipo", mode="before")
-    def auto_tipo(cls, v, values):
-        unidade = values.data.get("unidade")
+    data: Optional[datetime] = None  # 👈 AQUI
 
-        if unidade:
-            unidade = unidade.lower()
+def inferir_tipo(unidade: str):
+    if not unidade:
+        return "desconhecido"
 
-            if unidade == "kwh":
-                return "energia"
-            elif unidade in ["m³", "m3", "l"]:
-                return "agua"
-            elif unidade in ["m³g", "m3g", "gas", "m³ gás", "m3 gas"]:
-                return "gas"
+    unidade = unidade.lower().strip()
+    unidade = unidade.replace("³", "3").replace(" ", "")
 
-        raise ValueError("Não foi possível determinar o tipo")
+    if unidade == "kwh":
+        return "energia"
+    elif unidade in ["m3", "l"]:
+        return "agua"
+    elif unidade in ["m3g", "gas"]:
+        return "gas"
+
+    return "desconhecido"
     
 class ConsumoUpdate(BaseModel):
     # Esquema para atualizar consumo
     unidade: str
-    valor: str  # Nota: deveria ser Decimal
+    valor: Decimal 
     id_meta: Optional[int] = None
     class Config:
         from_attributes = True
