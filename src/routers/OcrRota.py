@@ -243,12 +243,16 @@ def converter_para_consumo(id_leitura: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Dados incompletos para conversão")
     
     existe = db.query(Consumo).filter(
-    Consumo.id_usuario == leitura.id_usuario,
-    Consumo.tipo == leitura.tipo_fatura
+        Consumo.id_usuario == leitura.id_usuario,
+        Consumo.tipo == leitura.tipo_fatura,
+        Consumo.mes_referencia == leitura.mes_referencia,
     ).first()
 
     if existe:
-        raise HTTPException(status_code=400, detail="Consumo já registrado para esse mês")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Consumo de '{leitura.tipo_fatura}' já registrado para {leitura.mes_referencia or 'esse mês'}",
+        )
 
     novo_consumo = Consumo(
         id_usuario=leitura.id_usuario,
